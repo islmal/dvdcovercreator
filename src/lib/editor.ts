@@ -1,5 +1,4 @@
-import { Canvas, FabricImage, FabricObject, Gradient, IText, Rect, Textbox, filters } from "fabric";
-import dvdLogoUrl from "../assets/dvd-video-logo.webp";
+import { Canvas, FabricImage, FabricObject, FabricText, Gradient, Group, IText, Rect, Textbox } from "fabric";
 import { coverFit, packGrid, wizardSlots, zoneAt, type Layout, type Rect as Rect2, type ZoneName } from "./layout";
 
 export type EditorObject = FabricObject & {
@@ -321,18 +320,19 @@ export function createEditor(
         ),
       );
 
-      // black on transparent; inverted to white to read on dark panels
-      const logo = async () => {
-        const img = await FabricImage.fromURL(dvdLogoUrl);
-        img.filters.push(new filters.Invert());
-        img.applyFilters();
-        return img;
-      };
-      const spineLogo = await logo();
+      // generic placeholder badge, not the trademarked DVD-Video logo
+      const logo = () =>
+        new Group(
+          [
+            new Rect({ left: 0, top: 0, width: 200, height: 120, rx: 24, ry: 24, fill: "transparent", stroke: "#fff", strokeWidth: 10 }),
+            new FabricText("DVD", { left: 105, top: 65, originX: "center", originY: "center", fontFamily: "Arial", fontWeight: "bold", fontSize: 70, fill: "#fff" }),
+          ],
+        );
+      const spineLogo = logo();
       const s = (sp.w * 0.8) / spineLogo.width;
       spineLogo.set({ originX: "center", originY: "bottom", scaleX: s, scaleY: s, left: slots.spineLogo.x, top: slots.spineLogo.y });
       tag(spineLogo);
-      const frontLogo = await logo();
+      const frontLogo = logo();
       const fs = 300 / frontLogo.width;
       frontLogo.set({ originX: "right", originY: "bottom", scaleX: fs, scaleY: fs, left: slots.frontLogo.x, top: slots.frontLogo.y });
       tag(frontLogo);

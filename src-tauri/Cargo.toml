@@ -1,8 +1,9 @@
 [package]
 name = "dvd-cover-creator"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Desktop app to design print-ready DVD covers and export them as PDF/PNG at 300 DPI"
+authors = ["islmal"]
+license = "MIT"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
