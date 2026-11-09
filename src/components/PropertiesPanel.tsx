@@ -65,9 +65,7 @@ export default function PropertiesPanel({ editor, obj }: { editor: Editor | null
       <button
         className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-500"
         onClick={() => {
-          editor.canvas.remove(obj);
-          editor.canvas.discardActiveObject();
-          editor.canvas.requestRenderAll();
+          editor.deleteSelected();
         }}
       >
         Delete

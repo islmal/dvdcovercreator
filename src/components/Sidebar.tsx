@@ -48,9 +48,14 @@ export default function Sidebar(p: Props) {
           placeholder="Project Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && title.trim()) {
+              p.onAutoGenerate(title.trim(), covers);
+            }
+          }}
         />
         <label className={btn} title="All images are arranged on the front and the back">
-          {covers.length ? covers.map((f) => f.name).join(", ") : "Cover Images (up to 6)"}
+          {covers.length ? covers.map((f) => f.name).join(", ") : "Cover Images (optional, up to 6)"}
           <input
             type="file"
             accept="image/*"
@@ -69,7 +74,7 @@ export default function Sidebar(p: Props) {
         )}
         <button
           className={btn + " disabled:cursor-not-allowed disabled:opacity-50"}
-          disabled={!title.trim() || !covers.length}
+          disabled={!title.trim()}
           onClick={() => p.onAutoGenerate(title.trim(), covers)}
         >
           Auto-Generate

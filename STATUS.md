@@ -14,15 +14,16 @@ Out of Scope: Undo/Redo, Projekt speichern/laden, Custom Fonts, CMYK, Lineale, w
 - Fallen: Canvas-Hintergrund ist explizit weiÃŸ (sonst transparenter Export); `dragDropEnabled:false` in tauri.conf nÃ¶tig, sonst feuern HTML5-Drop-Events nicht; Rust lÃ¤uft nur mit MSVC-Toolchain (`rustup override`); Spine-Text hat origin center + 90Â°, Snap nur fÃ¼r `IText`.
 
 ## Roadmap & Known Issues
-- [planned] Repo public machen (README, LICENSE, Logo-Ersatz, Cleanup) â†’ docs/plans/2026-10-28-public-release.md
-- Nativer Smoke-Test in `npm run tauri dev` noch offen (Save-Dialog, DPI in Dateieigenschaften, PDF-SeitenmaÃŸ) â€“ Checkliste in README.
-- Drag&Drop von Dateien nur im Browser-Pane geprÃ¼ft, nicht im Tauri-Fenster.
-- Kein Delete per Taste (nur Button). `cargo test` meldet aktuell 0 Tests (frühere „3/3“ nicht reproduziert).
+- [planned] Repo public machen (README, LICENSE, Logo-Ersatz, Cleanup) – docs/plans/2026-10-28-public-release.md
+- Nativer Smoke-Test in `npm run tauri dev` noch offen (Save-Dialog, DPI in Dateieigenschaften, PDF-Seitenmaß) – Checkliste in README.
+- Drag&Drop von Dateien nur im Browser-Pane geprüft, nicht im Tauri-Fenster.
+- `cargo test` meldet aktuell 0 Tests (frühere „3/3“ nicht reproduziert).
 
 ## Milestone Changelog
-- 2026-10-28: Plan dvd-cover-creator umgesetzt (Scaffold, Layout, Editor, Rust-Export). Verifiziert: `vitest` 5/5, `cargo test` 3/3, `npm run build` + `cargo build` grÃ¼n; Canvas-Verhalten (Spine-Text 90Â°, Auto-Fill, Slim/Bleed-Verschiebung, PNG-MaÃŸe 3213Ã—2161 / 3283Ã—2231 / 3131Ã—2161 / 3201Ã—2231) im Browser-Pane geprÃ¼ft.
-- 2026-10-28: Express Wizard (`wizardSlots`, `autoGenerate`, Sidebar-Abschnitt). Verifiziert: `vitest` 8/8, `tsc`+`vite build` grün; im Browser-Pane per Pixelprüfung: alle Wizard-Objekte inkl. beider Logos sichtbar, 3× Klick ohne Duplikate, Slim/Bleed korrekt verschoben, Canvas-Seitenverhältnisse stimmen.
+- 2026-11-09: Clipboard-Paste (Ctrl+V) für Bilder, Tastatur-Delete (Del-Taste) für Cover-Elemente und text-only Express Generation (Cover-Generierung mit nur Titel). Verifiziert: `vitest` 10/10, `tsc`+`vite build` grün.
 - 2026-10-28: Public-Release-Vorbereitung: eigenes DVD-Badge statt Original-Logo (Asset gelöscht), MIT-LICENSE, Cargo/package-Metadaten, `plugin-opener` entfernt, SYSTEM_STATE.txt untracked, englische README. Verifiziert: `vitest` 10/10, `tsc`+`vite build`, `cargo build` grün; Browser-Pane: beide Badges sichtbar, 3× Auto-Generate ohne Duplikate.
+- 2026-10-28: Express Wizard (`wizardSlots`, `autoGenerate`, Sidebar-Abschnitt). Verifiziert: `vitest` 8/8, `tsc`+`vite build` grün; im Browser-Pane per Pixelprüfung: alle Wizard-Objekte inkl. beider Logos sichtbar, 3× Klick ohne Duplikate, Slim/Bleed korrekt verschoben, Canvas-Seitenverhältnisse stimmen.
+- 2026-10-28: Plan dvd-cover-creator umgesetzt (Scaffold, Layout, Editor, Rust-Export). Verifiziert: `vitest` 5/5, `cargo test` 3/3, `npm run build` + `cargo build` grün; Canvas-Verhalten (Spine-Text 90°, Auto-Fill, Slim/Bleed-Verschiebung, PNG-Maße 3213×2161 / 3283×2231 / 3131×2161 / 3201×2231) im Browser-Pane geprüft.
 
 ## Dead Ends & Anti-Patterns
-- Auto-Generate im Browser-Test wirkungslos: ✗ Bug im Wizard → ✓ Button bleibt disabled, bis Titel UND Cover-Bild gesetzt sind.
+- Auto-Generate ohne Cover-Bilder: ✗ Bilder zwingend vorausgesetzt → ✓ Titel allein genügt, Express Wizard platziert zentrierten Front-Titel mit Dark-Gradient.

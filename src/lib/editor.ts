@@ -21,7 +21,23 @@ function averageColor(img: FabricImage): [number, number, number] {
 
 /** Dark vertical gradient tinted by the cover colour, so white text stays readable. */
 function backdrop(avg: [number, number, number] | null) {
-  if (!avg) return new Rect({ width: 100, height: 100, fill: "#1A1A1A", selectable: false, evented: false });
+  if (!avg) {
+    return new Rect({
+      width: 100,
+      height: 100,
+      selectable: false,
+      evented: false,
+      fill: new Gradient({
+        type: "linear",
+        gradientUnits: "percentage",
+        coords: { x1: 0, y1: 0, x2: 0, y2: 1 },
+        colorStops: [
+          { offset: 0, color: "#2d3139" },
+          { offset: 1, color: "#141518" },
+        ],
+      }),
+    });
+  }
   const shade = (f: number) => `rgb(${avg.map((v) => Math.round(v * f)).join(",")})`;
   return new Rect({
     width: 100,
@@ -43,11 +59,13 @@ function backdrop(avg: [number, number, number] | null) {
 export interface Editor {
   canvas: Canvas;
   setLayout(next: Layout): void;
+  setTargetZone(zone: ZoneName): void;
   addText(zone: ZoneName): void;
   addImage(file: File, zone: ZoneName, dropX?: number, dropY?: number): Promise<void>;
   setBackground(file: File): Promise<void>;
   autoFill(obj: FabricObject): void;
   autoGenerate(title: string, images: File[]): Promise<void>;
+  deleteSelected(): void;
   exportPng(): string;
   dispose(): void;
 }
@@ -61,6 +79,8 @@ export function createEditor(
   let layout = initial;
   let zoom = 1;
   let showGuides = true;
+  let targetZone: ZoneName = "front";
+  let lastPointer: { x: number; y: number } | null = null;
   const canvas = new Canvas(el, {
     width: layout.width,
     height: layout.height,
@@ -130,6 +150,107 @@ export function createEditor(
   host.addEventListener("dragover", onDragOver);
   host.addEventListener("drop", onDrop);
 
+  const onMouseMove = (e: MouseEvent) => {
+    const r = canvas.getElement().getBoundingClientRect();
+    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+      lastPointer = {
+        x: (e.clientX - r.left) / zoom,
+        y: (e.clientY - r.top) / zoom,
+      };
+    } else {
+      lastPointer = null;
+    }
+  };
+  const onMouseLeave = () => {
+    lastPointer = null;
+  };
+  host.addEventListener("mousemove", onMouseMove);
+  host.addEventListener("mouseleave", onMouseLeave);
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Delete") {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          (activeEl as HTMLElement).isContentEditable)
+      ) {
+        return;
+      }
+      const activeObj = canvas.getActiveObject();
+      if (!activeObj) return;
+      if ("isEditing" in activeObj && (activeObj as IText).isEditing) return;
+
+      e.preventDefault();
+      editor.deleteSelected();
+    }
+  };
+  window.addEventListener("keydown", onKeyDown);
+
+  const onPaste = (e: ClipboardEvent) => {
+    const activeEl = document.activeElement;
+    const inTextInput =
+      activeEl &&
+      (activeEl.tagName === "INPUT" ||
+        activeEl.tagName === "TEXTAREA" ||
+        (activeEl as HTMLElement).isContentEditable);
+
+    const items = Array.from(e.clipboardData?.items ?? []);
+    const files = Array.from(e.clipboardData?.files ?? []);
+    const imageFiles: File[] = [];
+
+    for (const it of items) {
+      if (it.type.startsWith("image/")) {
+        const f = it.getAsFile();
+        if (f) imageFiles.push(f);
+      }
+    }
+    if (!imageFiles.length) {
+      for (const f of files) {
+        if (f.type.startsWith("image/") || /\.(jpe?g|png|webp|avif|gif|bmp)$/i.test(f.name)) {
+          imageFiles.push(f);
+        }
+      }
+    }
+
+    if (!imageFiles.length) return;
+
+    if (inTextInput) {
+      const hasText = items.some((it) => it.type === "text/plain") || e.clipboardData?.getData("text/plain");
+      if (hasText) return;
+    }
+
+    const activeObj = canvas.getActiveObject();
+    if (activeObj && "isEditing" in activeObj && (activeObj as IText).isEditing) {
+      const hasText = items.some((it) => it.type === "text/plain") || e.clipboardData?.getData("text/plain");
+      if (hasText) return;
+      (activeObj as IText).exitEditing();
+    }
+
+    e.preventDefault();
+
+    let pasteZone = targetZone;
+    let posX: number | undefined;
+    let posY: number | undefined;
+
+    if (lastPointer) {
+      posX = lastPointer.x;
+      posY = lastPointer.y;
+      pasteZone = zoneAt(posX, layout);
+    } else if (activeObj) {
+      pasteZone = zoneAt(activeObj.getCenterPoint().x, layout);
+    }
+
+    imageFiles.forEach((file, idx) => {
+      const z = layout.zones[pasteZone];
+      const dropX = posX !== undefined ? posX + idx * 30 : z.x + z.w / 2 + idx * 30;
+      const dropY = posY !== undefined ? posY + idx * 30 : layout.height / 2 + idx * 30;
+      void editor.addImage(file, pasteZone, dropX, dropY);
+    });
+  };
+  window.addEventListener("paste", onPaste);
+
   const loadImage = async (file: File) => {
     const url = URL.createObjectURL(file);
     try {
@@ -193,6 +314,22 @@ export function createEditor(
         }
       }
       resize();
+      canvas.requestRenderAll();
+    },
+
+    setTargetZone(zone) {
+      targetZone = zone;
+    },
+
+    deleteSelected() {
+      const activeObj = canvas.getActiveObject();
+      if (!activeObj) return;
+      if ("isEditing" in activeObj && (activeObj as IText).isEditing) return;
+      const active = canvas.getActiveObjects();
+      canvas.discardActiveObject();
+      for (const obj of active) {
+        canvas.remove(obj);
+      }
       canvas.requestRenderAll();
     },
 
@@ -282,24 +419,31 @@ export function createEditor(
           tag(img);
         });
       };
-      arrange(cells, slots.frontImages);
-      if (files.length) arrange(await Promise.all(files.map(loadImage)), slots.backImages);
+      const hasImages = cells.length > 0;
+      if (hasImages) {
+        arrange(cells, slots.frontImages);
+        arrange(await Promise.all(files.map(loadImage)), slots.backImages);
+      }
 
       const text = { fill: "#ffffff", fontFamily: "sans-serif" };
-      tag(
-        new IText(title, {
-          ...text,
-          originX: "center",
-          originY: "center",
-          textAlign: "center",
-          left: slots.frontTitle.x,
-          top: slots.frontTitle.y,
-          fontSize: 140,
-          stroke: "#000000",
-          strokeWidth: 8,
-          paintFirst: "stroke",
-        }),
-      );
+      const frontW = layout.trim.x + layout.trim.w - layout.zones.front.x;
+      const frontTitle = new IText(title, {
+        ...text,
+        originX: "center",
+        originY: "center",
+        textAlign: "center",
+        left: slots.frontTitle.x,
+        top: hasImages ? slots.frontTitle.y : layout.trim.y + layout.trim.h * 0.45,
+        fontSize: hasImages ? 140 : 180,
+        stroke: "#000000",
+        strokeWidth: 8,
+        paintFirst: "stroke",
+      });
+      const maxFrontW = frontW * 0.88;
+      if (frontTitle.width > maxFrontW) {
+        frontTitle.set({ fontSize: (frontTitle.fontSize * maxFrontW) / frontTitle.width });
+      }
+      tag(frontTitle);
       const spineTitle = new IText(title, {
         ...text,
         originX: "center",
@@ -360,6 +504,10 @@ export function createEditor(
       ro.disconnect();
       host.removeEventListener("dragover", onDragOver);
       host.removeEventListener("drop", onDrop);
+      host.removeEventListener("mousemove", onMouseMove);
+      host.removeEventListener("mouseleave", onMouseLeave);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("paste", onPaste);
       void canvas.dispose();
     },
   };

@@ -28,6 +28,7 @@ export default function App() {
   }, []);
 
   useEffect(() => editor?.setLayout(layout), [editor, layout]);
+  useEffect(() => editor?.setTargetZone(zone), [editor, zone]);
 
   const run = (p: Promise<unknown>) => p.catch((e) => alert(String(e)));
 
