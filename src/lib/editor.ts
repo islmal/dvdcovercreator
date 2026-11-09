@@ -66,6 +66,16 @@ export interface Editor {
   autoFill(obj: FabricObject): void;
   autoGenerate(title: string, images: File[]): Promise<void>;
   deleteSelected(): void;
+  getLayers(): FabricObject[];
+  bringForward(obj: FabricObject): void;
+  sendBackward(obj: FabricObject): void;
+  bringToFront(obj: FabricObject): void;
+  sendToBack(obj: FabricObject): void;
+  toggleVisibility(obj: FabricObject): void;
+  setOpacity(obj: FabricObject, opacity: number): void;
+  removeObject(obj: FabricObject): void;
+  selectObject(obj: FabricObject): void;
+  onLayersChange(cb: () => void): () => void;
   exportPng(): string;
   dispose(): void;
 }
@@ -124,10 +134,21 @@ export function createEditor(
     ctx.restore();
   });
 
-  const select = () => onSelect(canvas.getActiveObject() ?? null);
+  const layerListeners = new Set<() => void>();
+  const notifyLayers = () => {
+    for (const cb of layerListeners) cb();
+  };
+
+  const select = () => {
+    onSelect(canvas.getActiveObject() ?? null);
+    notifyLayers();
+  };
   canvas.on("selection:created", select);
   canvas.on("selection:updated", select);
   canvas.on("selection:cleared", select);
+  canvas.on("object:added", notifyLayers);
+  canvas.on("object:removed", notifyLayers);
+  canvas.on("object:modified", notifyLayers);
 
   // Text whose centre is inside the spine snaps to the spine's centre line.
   canvas.on("object:moving", ({ target }) => {
@@ -331,6 +352,77 @@ export function createEditor(
         canvas.remove(obj);
       }
       canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    getLayers() {
+      return canvas.getObjects();
+    },
+
+    bringForward(obj) {
+      canvas.bringObjectForward(obj);
+      canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    sendBackward(obj) {
+      canvas.sendObjectBackwards(obj);
+      canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    bringToFront(obj) {
+      canvas.bringObjectToFront(obj);
+      canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    sendToBack(obj) {
+      canvas.sendObjectToBack(obj);
+      canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    toggleVisibility(obj) {
+      const next = obj.visible === false ? true : false;
+      obj.set({ visible: next });
+      if (!next && canvas.getActiveObject() === obj) {
+        canvas.discardActiveObject();
+      }
+      canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    setOpacity(obj, opacity) {
+      obj.set({ opacity: Math.max(0, Math.min(1, opacity)) });
+      canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    removeObject(obj) {
+      if (canvas.getActiveObject() === obj) {
+        canvas.discardActiveObject();
+      }
+      canvas.remove(obj);
+      canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    selectObject(obj) {
+      if (obj.visible === false) {
+        obj.set({ visible: true });
+      }
+      if (obj.selectable === false) {
+        obj.set({ selectable: true, evented: true });
+      }
+      canvas.setActiveObject(obj);
+      canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    onLayersChange(cb) {
+      layerListeners.add(cb);
+      return () => layerListeners.delete(cb);
     },
 
     addText(zone) {
@@ -501,6 +593,7 @@ export function createEditor(
     },
 
     dispose() {
+      layerListeners.clear();
       ro.disconnect();
       host.removeEventListener("dragover", onDragOver);
       host.removeEventListener("drop", onDrop);

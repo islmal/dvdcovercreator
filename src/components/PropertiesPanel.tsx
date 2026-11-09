@@ -2,12 +2,16 @@ import { useReducer } from "react";
 import { FabricImage, IText, type FabricObject } from "fabric";
 import type { Editor } from "../lib/editor";
 
-const field = "mt-1 block w-full rounded border border-slate-300 p-1 text-sm";
+const field = "mt-1 block w-full rounded bg-slate-700 border border-slate-600 p-1 text-xs text-white";
 
 export default function PropertiesPanel({ editor, obj }: { editor: Editor | null; obj: FabricObject | null }) {
   const [, refresh] = useReducer((n: number) => n + 1, 0);
   if (!editor || !obj) {
-    return <aside className="w-60 shrink-0 bg-slate-100 p-3 text-sm text-slate-500">Nothing selected</aside>;
+    return (
+      <div className="p-3 text-xs text-slate-400 bg-slate-800">
+        Kein Element ausgewählt
+      </div>
+    );
   }
   const set = (props: Partial<IText>) => {
     obj.set(props);
@@ -16,11 +20,14 @@ export default function PropertiesPanel({ editor, obj }: { editor: Editor | null
   };
   const t = obj instanceof IText ? obj : null;
   return (
-    <aside className="flex w-60 shrink-0 flex-col gap-3 bg-slate-100 p-3 text-sm">
+    <div className="flex flex-col gap-2.5 bg-slate-800 p-3 text-xs text-slate-200">
+      <div className="font-semibold text-slate-300 border-b border-slate-700 pb-1">
+        Eigenschaften (Properties)
+      </div>
       {t && (
         <>
           <label>
-            Font size
+            Schriftgröße (Font size)
             <input
               className={field}
               type="number"
@@ -30,11 +37,11 @@ export default function PropertiesPanel({ editor, obj }: { editor: Editor | null
             />
           </label>
           <label>
-            Color
+            Farbe (Color)
             <input className={field} type="color" value={String(t.fill)} onChange={(e) => set({ fill: e.target.value })} />
           </label>
           <label>
-            Alignment
+            Ausrichtung (Alignment)
             <select className={field} value={t.textAlign} onChange={(e) => set({ textAlign: e.target.value })}>
               <option value="left">Left</option>
               <option value="center">Center</option>
@@ -42,11 +49,11 @@ export default function PropertiesPanel({ editor, obj }: { editor: Editor | null
             </select>
           </label>
           <label>
-            Outline color
+            Konturfarbe (Outline color)
             <input className={field} type="color" value={String(t.stroke)} onChange={(e) => set({ stroke: e.target.value })} />
           </label>
           <label>
-            Outline width
+            Konturbreite (Outline width)
             <input
               className={field}
               type="number"
@@ -58,18 +65,18 @@ export default function PropertiesPanel({ editor, obj }: { editor: Editor | null
         </>
       )}
       {obj instanceof FabricImage && (
-        <button className="rounded bg-blue-600 px-3 py-2 text-white hover:bg-blue-500" onClick={() => editor.autoFill(obj)}>
+        <button className="rounded bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-500 font-medium cursor-pointer" onClick={() => editor.autoFill(obj)}>
           Auto-Fill zone
         </button>
       )}
       <button
-        className="rounded bg-red-600 px-3 py-2 text-white hover:bg-red-500"
+        className="rounded bg-red-600 px-3 py-1.5 text-white hover:bg-red-500 font-medium cursor-pointer"
         onClick={() => {
           editor.deleteSelected();
         }}
       >
-        Delete
+        Löschen (Delete)
       </button>
-    </aside>
+    </div>
   );
 }

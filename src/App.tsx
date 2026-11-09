@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { FabricObject } from "fabric";
 import Sidebar from "./components/Sidebar";
 import PropertiesPanel from "./components/PropertiesPanel";
+import LayersPanel from "./components/LayersPanel";
 import { createEditor, type Editor } from "./lib/editor";
 import { computeLayout, type ZoneName } from "./lib/layout";
 import { templates } from "./templates";
@@ -46,7 +47,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-slate-900">
       <Sidebar
         templateId={templateId}
         onTemplate={setTemplateId}
@@ -63,7 +64,15 @@ export default function App() {
       <div ref={hostRef} className="flex min-w-0 flex-1 items-center justify-center overflow-hidden bg-slate-300">
         <canvas ref={canvasRef} />
       </div>
-      <PropertiesPanel editor={editor} obj={selected} />
+      <aside className="flex w-64 shrink-0 flex-col bg-slate-800 border-l border-slate-700">
+        <PropertiesPanel editor={editor} obj={selected} />
+        <LayersPanel
+          editor={editor}
+          selected={selected}
+          onSelect={setSelected}
+          onAddText={() => editor?.addText(zone)}
+        />
+      </aside>
     </div>
   );
 }
