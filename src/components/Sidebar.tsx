@@ -12,11 +12,14 @@ interface Props {
   onZone: (z: ZoneName) => void;
   bleed: boolean;
   onBleed: (b: boolean) => void;
-  onAddText: () => void;
+  cutOutline: boolean;
+  onCutOutline: (v: boolean) => void;
+  onAddText: (defaultText?: string) => void;
   onAddBadge: (b: BadgeType) => void;
   onAddImage: (f: File) => void;
   onBackground: (f: File) => void;
   onAutoGenerate: (title: string, files: File[], badgeType: BadgeType) => void;
+  onPrint: () => void;
   onExport: (kind: "pdf" | "png") => void;
 }
 
@@ -160,7 +163,7 @@ export default function Sidebar(p: Props) {
           <option value="front">Front</option>
         </select>
       </label>
-      <button className={btn} onClick={p.onAddText}>
+      <button className={btn} onClick={() => p.onAddText(title)}>
         Add Text
       </button>
       <button className={btn} onClick={() => p.onAddBadge(p.badgeType)}>
@@ -168,7 +171,22 @@ export default function Sidebar(p: Props) {
       </button>
       <FileButton onFile={p.onAddImage}>Add Image</FileButton>
       <FileButton onFile={p.onBackground}>Upload Background</FileButton>
-      <div className="mt-auto flex flex-col gap-2">
+      <div className="mt-auto flex flex-col gap-2 pt-2 border-t border-slate-700">
+        <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={p.cutOutline}
+            onChange={(e) => p.onCutOutline(e.target.checked)}
+            className="accent-blue-500 cursor-pointer"
+          />
+          <span>Schneidelinie (Cut outline)</span>
+        </label>
+        <button
+          className={btn + " bg-blue-700 hover:bg-blue-600 font-semibold text-white"}
+          onClick={p.onPrint}
+        >
+          Drucken (Print)
+        </button>
         <button className={btn} onClick={() => p.onExport("pdf")}>
           Export PDF
         </button>

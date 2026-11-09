@@ -130,7 +130,7 @@ export interface Editor {
   canvas: Canvas;
   setLayout(next: Layout): void;
   setTargetZone(zone: ZoneName): void;
-  addText(zone: ZoneName): void;
+  addText(zone: ZoneName, defaultText?: string): void;
   addBadge(zone: ZoneName, badgeType?: BadgeType): void;
   addImage(file: File, zone: ZoneName, dropX?: number, dropY?: number): Promise<void>;
   setBackground(file: File): Promise<void>;
@@ -147,7 +147,7 @@ export interface Editor {
   removeObject(obj: FabricObject): void;
   selectObject(obj: FabricObject): void;
   onLayersChange(cb: () => void): () => void;
-  exportPng(): string;
+  exportPng(cutOutline?: boolean): string;
   dispose(): void;
 }
 
@@ -496,23 +496,63 @@ export function createEditor(
       return () => layerListeners.delete(cb);
     },
 
-    addText(zone) {
+    addText(zone, defaultText) {
       const z = layout.zones[zone];
-      add(
-        new IText("Text", {
-          originX: "center",
-          originY: "center",
-          left: z.x + z.w / 2,
-          top: layout.height / 2,
-          angle: zone === "spine" ? 90 : 0,
-          fontSize: zone === "spine" ? 90 : 140,
-          fill: "#000000",
-          textAlign: "center",
-          stroke: "#ffffff",
-          strokeWidth: 0,
-          paintFirst: "stroke",
-        }),
-      );
+      const text = defaultText?.trim() || "Project Title";
+      const fontFamily = "Arial, sans-serif";
+
+      if (zone === "spine") {
+        const sp = layout.zones.spine;
+        add(
+          new IText(text, {
+            originX: "center",
+            originY: "center",
+            left: z.x + z.w / 2,
+            top: layout.height / 2,
+            angle: 90,
+            fontSize: Math.min(90, sp.w * 0.6),
+            fill: "#ffffff",
+            fontFamily,
+            textAlign: "center",
+            stroke: "#000000",
+            strokeWidth: 4,
+            paintFirst: "stroke",
+          }),
+        );
+      } else if (zone === "front") {
+        add(
+          new IText(text, {
+            originX: "center",
+            originY: "center",
+            left: z.x + z.w / 2,
+            top: layout.height * 0.35,
+            fontSize: 140,
+            fill: "#ffffff",
+            fontFamily,
+            textAlign: "center",
+            stroke: "#000000",
+            strokeWidth: 8,
+            paintFirst: "stroke",
+          }),
+        );
+      } else {
+        // Back zone
+        add(
+          new IText(text, {
+            originX: "center",
+            originY: "center",
+            left: z.x + z.w / 2,
+            top: layout.height * 0.25,
+            fontSize: 100,
+            fill: "#ffffff",
+            fontFamily,
+            textAlign: "center",
+            stroke: "#000000",
+            strokeWidth: 6,
+            paintFirst: "stroke",
+          }),
+        );
+      }
     },
 
     addBadge(zone, badgeType = "dvd") {
@@ -658,14 +698,52 @@ export function createEditor(
     },
 
     // Rendered at zoom 1 (not via multiplier) so the PNG is exactly layout.width x layout.height.
-    exportPng() {
+    exportPng(cutOutline = true) {
       canvas.discardActiveObject();
       showGuides = false;
       canvas.setZoom(1);
       canvas.setDimensions({ width: layout.width, height: layout.height });
+
+      let cutGuide: Rect | null = null;
+      if (cutOutline) {
+        if (layout.bleedPx) {
+          cutGuide = new Rect({
+            left: layout.trim.x,
+            top: layout.trim.y,
+            width: layout.trim.w,
+            height: layout.trim.h,
+            fill: "transparent",
+            stroke: "#4a5568",
+            strokeWidth: 3,
+            strokeDashArray: [16, 12],
+            selectable: false,
+            evented: false,
+          });
+        } else {
+          cutGuide = new Rect({
+            left: 1.5,
+            top: 1.5,
+            width: layout.width - 3,
+            height: layout.height - 3,
+            fill: "transparent",
+            stroke: "#4a5568",
+            strokeWidth: 3,
+            strokeDashArray: [16, 12],
+            selectable: false,
+            evented: false,
+          });
+        }
+        canvas.add(cutGuide);
+        canvas.bringObjectToFront(cutGuide);
+      }
+      canvas.renderAll();
+
       try {
         return canvas.toDataURL({ format: "png", multiplier: 1 });
       } finally {
+        if (cutGuide) {
+          canvas.remove(cutGuide);
+        }
         showGuides = true;
         resize();
         canvas.requestRenderAll();

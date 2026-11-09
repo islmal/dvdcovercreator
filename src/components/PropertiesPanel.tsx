@@ -27,6 +27,47 @@ export default function PropertiesPanel({ editor, obj }: { editor: Editor | null
       {t && (
         <>
           <label>
+            Schriftart (Font Family)
+            <select
+              className={field}
+              value={t.fontFamily || "Arial"}
+              onChange={(e) => set({ fontFamily: e.target.value })}
+            >
+              <option value="Arial" style={{ fontFamily: "Arial" }}>Arial</option>
+              <option value="Impact" style={{ fontFamily: "Impact" }}>Impact</option>
+              <option value="Helvetica" style={{ fontFamily: "Helvetica" }}>Helvetica</option>
+              <option value="Trebuchet MS" style={{ fontFamily: "Trebuchet MS" }}>Trebuchet MS</option>
+              <option value="Verdana" style={{ fontFamily: "Verdana" }}>Verdana</option>
+              <option value="Georgia" style={{ fontFamily: "Georgia" }}>Georgia</option>
+              <option value="Times New Roman" style={{ fontFamily: "Times New Roman" }}>Times New Roman</option>
+              <option value="Courier New" style={{ fontFamily: "Courier New" }}>Courier New</option>
+              <option value="Segoe UI" style={{ fontFamily: "Segoe UI" }}>Segoe UI</option>
+              <option value="sans-serif">Sans-Serif</option>
+              <option value="serif">Serif</option>
+              <option value="monospace">Monospace</option>
+            </select>
+          </label>
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              className={`flex-1 rounded py-1 text-xs font-bold cursor-pointer transition-colors ${
+                t.fontWeight === "bold" ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              }`}
+              onClick={() => set({ fontWeight: t.fontWeight === "bold" ? "normal" : "bold" })}
+            >
+              B (Fett)
+            </button>
+            <button
+              type="button"
+              className={`flex-1 rounded py-1 text-xs italic cursor-pointer transition-colors ${
+                t.fontStyle === "italic" ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              }`}
+              onClick={() => set({ fontStyle: t.fontStyle === "italic" ? "normal" : "italic" })}
+            >
+              I (Kursiv)
+            </button>
+          </div>
+          <label>
             Schriftgröße (Font size)
             <input
               className={field}

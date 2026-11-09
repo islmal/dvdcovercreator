@@ -14,6 +14,7 @@ export default function App() {
     templates[0].id.includes("bluray") ? "bluray-blue" : "dvd",
   );
   const [bleed, setBleed] = useState(false);
+  const [cutOutline, setCutOutline] = useState(true);
   const [zone, setZone] = useState<ZoneName>("front");
   const [selected, setSelected] = useState<FabricObject | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -50,12 +51,52 @@ export default function App() {
     const extra = bleed ? 2 * template.bleedMm : 0;
     run(
       invoke("export_cover", {
-        dataB64: editor.exportPng().split(",")[1],
+        dataB64: editor.exportPng(cutOutline).split(",")[1],
         kind,
         widthMm: template.backMm + template.spineMm + template.frontMm + extra,
         heightMm: template.heightMm + extra,
       }),
     );
+  };
+
+  const printCover = () => {
+    if (!editor) return;
+    const dataUrl = editor.exportPng(cutOutline);
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>DVD Cover Print</title>
+            <style>
+              @page { size: landscape; margin: 0; }
+              html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: white; }
+              img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+            </style>
+          </head>
+          <body>
+            <img src="${dataUrl}" onload="setTimeout(() => { window.print(); }, 250);" />
+          </body>
+        </html>
+      `);
+      doc.close();
+      iframe.contentWindow?.focus();
+      setTimeout(() => {
+        try {
+          document.body.removeChild(iframe);
+        } catch {}
+      }, 60000);
+    }
   };
 
   return (
@@ -69,11 +110,14 @@ export default function App() {
         onZone={setZone}
         bleed={bleed}
         onBleed={setBleed}
-        onAddText={() => editor?.addText(zone)}
+        cutOutline={cutOutline}
+        onCutOutline={setCutOutline}
+        onAddText={(title) => editor?.addText(zone, title)}
         onAddBadge={(b) => editor?.addBadge(zone, b)}
         onAddImage={(f) => editor && run(editor.addImage(f, zone))}
         onBackground={(f) => editor && run(editor.setBackground(f))}
         onAutoGenerate={(t, f, b) => editor && run(editor.autoGenerate(t, f, b))}
+        onPrint={printCover}
         onExport={exportCover}
       />
       <div ref={hostRef} className="flex min-w-0 flex-1 items-center justify-center overflow-hidden bg-slate-300">
