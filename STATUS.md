@@ -20,6 +20,7 @@ Out of Scope: Undo/Redo, Projekt speichern/laden, Custom Fonts, CMYK, Lineale, w
 - `cargo test` meldet aktuell 0 Tests (frühere „3/3“ nicht reproduziert).
 
 ## Milestone Changelog
+- 2026-11-09: Photoshop-inspiriertes Ebenen-Panel (LayersPanel): Sichtbarkeit (Eye-Toggle), Deckkraft (Opacity-Slider/Input 0-100%), Z-Index-Verschiebung (Bring Forward / Backward / Front / Back), Layer-Auswahl per Klick und Löschen. Verifiziert: vitest 13/13, tsc+vite build grün, tauri release executable gebaut & Desktop-Shortcut verifiziert.
 - 2026-11-09: Clipboard-Paste (Ctrl+V) für Bilder, Tastatur-Delete (Del-Taste) für Cover-Elemente und text-only Express Generation (Cover-Generierung mit nur Titel). Verifiziert: `vitest` 10/10, `tsc`+`vite build` grün.
 - 2026-10-28: Public-Release-Vorbereitung: eigenes DVD-Badge statt Original-Logo (Asset gelöscht), MIT-LICENSE, Cargo/package-Metadaten, `plugin-opener` entfernt, SYSTEM_STATE.txt untracked, englische README. Verifiziert: `vitest` 10/10, `tsc`+`vite build`, `cargo build` grün; Browser-Pane: beide Badges sichtbar, 3× Auto-Generate ohne Duplikate.
 - 2026-10-28: Express Wizard (`wizardSlots`, `autoGenerate`, Sidebar-Abschnitt). Verifiziert: `vitest` 8/8, `tsc`+`vite build` grün; im Browser-Pane per Pixelprüfung: alle Wizard-Objekte inkl. beider Logos sichtbar, 3× Klick ohne Duplikate, Slim/Bleed korrekt verschoben, Canvas-Seitenverhältnisse stimmen.
