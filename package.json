@@ -8,6 +8,7 @@
     "dev": "vite",
     "test": "vitest run",
     "build": "tsc && vite build",
+    "build:exe": "tauri build --no-bundle",
     "preview": "vite preview",
     "tauri": "tauri"
   },
