@@ -24,7 +24,11 @@ function getLayerInfo(obj: FabricObject): { title: string; typeIcon: string; bad
     return { title: `Bild${zone}`, typeIcon: "🖼", badgeColor: "bg-amber-600" };
   }
   if (obj instanceof Group) {
-    return { title: "DVD Logo Badge", typeIcon: "❖", badgeColor: "bg-purple-600" };
+    const isBD = (obj as EditorObject).badgeType?.includes("bluray");
+    if (isBD) {
+      return { title: "Blu-ray Badge", typeIcon: "BD", badgeColor: "bg-cyan-600" };
+    }
+    return { title: "DVD Logo Badge", typeIcon: "DVD", badgeColor: "bg-purple-600" };
   }
   if (obj instanceof Rect) {
     return { title: "Backdrop Gradient", typeIcon: "▭", badgeColor: "bg-slate-600" };

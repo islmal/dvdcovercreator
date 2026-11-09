@@ -1,11 +1,81 @@
 import { Canvas, FabricImage, FabricObject, FabricText, Gradient, Group, IText, Rect, Textbox } from "fabric";
 import { coverFit, packGrid, wizardSlots, zoneAt, type Layout, type Rect as Rect2, type ZoneName } from "./layout";
 
+export type BadgeType = "dvd" | "bluray-blue" | "bluray-white";
+
 export type EditorObject = FabricObject & {
   autofillZone?: ZoneName;
   isBackground?: boolean;
   wizard?: true;
+  badgeType?: BadgeType;
 };
+
+export function createBadge(type: BadgeType): Group {
+  const isBluray = type === "bluray-blue" || type === "bluray-white";
+  const color = type === "bluray-blue" ? "#00a4e4" : "#ffffff";
+
+  let group: Group;
+  if (isBluray) {
+    const border = new Rect({
+      left: 0,
+      top: 0,
+      width: 240,
+      height: 120,
+      rx: 20,
+      ry: 20,
+      fill: "transparent",
+      stroke: color,
+      strokeWidth: 9,
+    });
+    const mainText = new FabricText("Blu-ray", {
+      left: 120,
+      top: 45,
+      originX: "center",
+      originY: "center",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontStyle: "italic",
+      fontWeight: "bold",
+      fontSize: 50,
+      fill: color,
+    });
+    const subText = new FabricText("D I S C", {
+      left: 120,
+      top: 85,
+      originX: "center",
+      originY: "center",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontWeight: "bold",
+      fontSize: 22,
+      fill: color,
+    });
+    group = new Group([border, mainText, subText]);
+  } else {
+    const border = new Rect({
+      left: 0,
+      top: 0,
+      width: 200,
+      height: 120,
+      rx: 24,
+      ry: 24,
+      fill: "transparent",
+      stroke: color,
+      strokeWidth: 10,
+    });
+    const text = new FabricText("DVD", {
+      left: 105,
+      top: 65,
+      originX: "center",
+      originY: "center",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontWeight: "bold",
+      fontSize: 70,
+      fill: color,
+    });
+    group = new Group([border, text]);
+  }
+  (group as EditorObject).badgeType = type;
+  return group;
+}
 
 /** Average colour of an image from a 16x16 downscale. */
 function averageColor(img: FabricImage): [number, number, number] {
@@ -61,10 +131,11 @@ export interface Editor {
   setLayout(next: Layout): void;
   setTargetZone(zone: ZoneName): void;
   addText(zone: ZoneName): void;
+  addBadge(zone: ZoneName, badgeType?: BadgeType): void;
   addImage(file: File, zone: ZoneName, dropX?: number, dropY?: number): Promise<void>;
   setBackground(file: File): Promise<void>;
   autoFill(obj: FabricObject): void;
-  autoGenerate(title: string, images: File[]): Promise<void>;
+  autoGenerate(title: string, images: File[], badgeType?: BadgeType): Promise<void>;
   deleteSelected(): void;
   getLayers(): FabricObject[];
   bringForward(obj: FabricObject): void;
@@ -444,6 +515,22 @@ export function createEditor(
       );
     },
 
+    addBadge(zone, badgeType = "dvd") {
+      const z = layout.zones[zone];
+      const badge = createBadge(badgeType);
+      const sp = layout.zones.spine;
+      const s = zone === "spine" ? (sp.w * 0.8) / badge.width : 280 / badge.width;
+      badge.set({
+        originX: "center",
+        originY: "center",
+        scaleX: s,
+        scaleY: s,
+        left: z.x + z.w / 2,
+        top: layout.height * 0.85,
+      });
+      add(badge);
+    },
+
     async addImage(file, zone, dropX, dropY) {
       const img = await loadImage(file);
       const z = layout.zones[zone];
@@ -477,7 +564,7 @@ export function createEditor(
       canvas.requestRenderAll();
     },
 
-    async autoGenerate(title, images) {
+    async autoGenerate(title, images, badgeType = "dvd") {
       for (const o of canvas.getObjects() as EditorObject[]) if (o.wizard) canvas.remove(o);
       const tag = <T extends FabricObject>(o: T) => {
         (o as EditorObject).wizard = true;
@@ -556,19 +643,12 @@ export function createEditor(
         ),
       );
 
-      // generic placeholder badge, not the trademarked DVD-Video logo
-      const logo = () =>
-        new Group(
-          [
-            new Rect({ left: 0, top: 0, width: 200, height: 120, rx: 24, ry: 24, fill: "transparent", stroke: "#fff", strokeWidth: 10 }),
-            new FabricText("DVD", { left: 105, top: 65, originX: "center", originY: "center", fontFamily: "Arial", fontWeight: "bold", fontSize: 70, fill: "#fff" }),
-          ],
-        );
-      const spineLogo = logo();
+      // logo badge (DVD or Blu-ray)
+      const spineLogo = createBadge(badgeType);
       const s = (sp.w * 0.8) / spineLogo.width;
       spineLogo.set({ originX: "center", originY: "bottom", scaleX: s, scaleY: s, left: slots.spineLogo.x, top: slots.spineLogo.y });
       tag(spineLogo);
-      const frontLogo = logo();
+      const frontLogo = createBadge(badgeType);
       const fs = 300 / frontLogo.width;
       frontLogo.set({ originX: "right", originY: "bottom", scaleX: fs, scaleY: fs, left: slots.frontLogo.x, top: slots.frontLogo.y });
       tag(frontLogo);
