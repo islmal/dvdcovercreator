@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computeLayout, coverFit, packGrid, wizardSlots, zoneAt } from "./layout";
 import { templates } from "../templates";
 
-const [std, slim] = templates;
+const [std, slim, bluray] = templates;
 
 describe("computeLayout", () => {
   it("standard", () => {
@@ -18,6 +18,15 @@ describe("computeLayout", () => {
     expect(l.zones.spine.w).toBe(Math.round((7 / 25.4) * 300));
     expect(l.zones.spine.w).toBe(83);
     expect(l.zones.front.x).toBe(1607);
+  });
+  it("bluray 11mm", () => {
+    const l = computeLayout(bluray, false);
+    expect(l.width).toBe(3178);
+    expect(l.height).toBe(1760);
+    expect(l.zones.spine.w).toBe(130);
+    expect(l.zones.front.x).toBe(1654);
+    expect(l.zones.back.w).toBe(1524);
+    expect(l.zones.front.w).toBe(1524);
   });
   it("bleed", () => {
     const a = computeLayout(std, false);
@@ -56,8 +65,14 @@ describe("coverFit", () => {
 });
 
 describe("wizardSlots", () => {
-  const [stdT, slimT] = templates;
-  for (const [name, t, bleed] of [["standard", stdT, false], ["slim", slimT, false], ["bleed", stdT, true]] as const) {
+  const [stdT, slimT, blurayT] = templates;
+  for (const [name, t, bleed] of [
+    ["standard", stdT, false],
+    ["slim", slimT, false],
+    ["bluray", blurayT, false],
+    ["bleed", stdT, true],
+    ["bluray-bleed", blurayT, true],
+  ] as const) {
     it(name, () => {
       const l = computeLayout(t, bleed);
       const s = wizardSlots(l);
