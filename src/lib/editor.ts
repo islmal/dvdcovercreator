@@ -3,6 +3,15 @@ import { coverFit, packGrid, wizardSlots, zoneAt, type Layout, type Rect as Rect
 
 export type BadgeType = "dvd" | "bluray-blue" | "bluray-white";
 
+export type BackgroundStyle = "gradient" | "solid" | "radial";
+
+export interface BackgroundOptions {
+  style: BackgroundStyle;
+  color1: string;
+  color2?: string;
+  direction?: "vertical" | "horizontal";
+}
+
 export type EditorObject = FabricObject & {
   autofillZone?: ZoneName;
   isBackground?: boolean;
@@ -134,6 +143,7 @@ export interface Editor {
   addBadge(zone: ZoneName, badgeType?: BadgeType): void;
   addImage(file: File, zone: ZoneName, dropX?: number, dropY?: number): Promise<void>;
   setBackground(file: File): Promise<void>;
+  generateBackground(options: BackgroundOptions): void;
   autoFill(obj: FabricObject): void;
   autoGenerate(title: string, images: File[], badgeType?: BadgeType): Promise<void>;
   deleteSelected(): void;
@@ -595,6 +605,59 @@ export function createEditor(
       canvas.add(img);
       canvas.sendObjectToBack(img);
       canvas.requestRenderAll();
+      notifyLayers();
+    },
+
+    generateBackground(options: BackgroundOptions) {
+      for (const o of canvas.getObjects() as EditorObject[]) {
+        if (o.isBackground) canvas.remove(o);
+      }
+
+      let fillProp: string | Gradient<"linear"> | Gradient<"radial">;
+      if (options.style === "solid") {
+        fillProp = options.color1;
+      } else if (options.style === "radial") {
+        fillProp = new Gradient({
+          type: "radial",
+          gradientUnits: "percentage",
+          coords: { r1: 0, r2: 0.8, x1: 0.5, y1: 0.5, x2: 0.5, y2: 0.5 },
+          colorStops: [
+            { offset: 0, color: options.color1 },
+            { offset: 1, color: options.color2 || "#000000" },
+          ],
+        });
+      } else {
+        const isHorizontal = options.direction === "horizontal";
+        fillProp = new Gradient({
+          type: "linear",
+          gradientUnits: "percentage",
+          coords: isHorizontal
+            ? { x1: 0, y1: 0, x2: 1, y2: 0 }
+            : { x1: 0, y1: 0, x2: 0, y2: 1 },
+          colorStops: [
+            { offset: 0, color: options.color1 },
+            { offset: 1, color: options.color2 || options.color1 },
+          ],
+        });
+      }
+
+      const rect = new Rect({
+        width: layout.width,
+        height: layout.height,
+        left: layout.width / 2,
+        top: layout.height / 2,
+        originX: "center",
+        originY: "center",
+        selectable: false,
+        evented: false,
+        fill: fillProp,
+      }) as EditorObject;
+
+      rect.isBackground = true;
+      canvas.add(rect);
+      canvas.sendObjectToBack(rect);
+      canvas.requestRenderAll();
+      notifyLayers();
     },
 
     autoFill(obj) {

@@ -18,6 +18,7 @@ interface Props {
   onAddBadge: (b: BadgeType) => void;
   onAddImage: (f: File) => void;
   onBackground: (f: File) => void;
+  onOpenBackgroundModal: () => void;
   onAutoGenerate: (title: string, files: File[], badgeType: BadgeType) => void;
   onPrint: () => void;
   onExport: (kind: "pdf" | "png") => void;
@@ -171,6 +172,14 @@ export default function Sidebar(p: Props) {
       </button>
       <FileButton onFile={p.onAddImage}>Add Image</FileButton>
       <FileButton onFile={p.onBackground}>Upload Background</FileButton>
+      <button
+        type="button"
+        className={btn + " flex items-center justify-center gap-1.5 bg-slate-700 hover:bg-slate-600"}
+        onClick={p.onOpenBackgroundModal}
+      >
+        <span>🎨</span>
+        <span>Generate Background</span>
+      </button>
       <div className="mt-auto flex flex-col gap-2 pt-2 border-t border-slate-700">
         <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
           <input

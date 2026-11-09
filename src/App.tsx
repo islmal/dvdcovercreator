@@ -4,6 +4,7 @@ import type { FabricObject } from "fabric";
 import Sidebar from "./components/Sidebar";
 import PropertiesPanel from "./components/PropertiesPanel";
 import LayersPanel from "./components/LayersPanel";
+import BackgroundModal from "./components/BackgroundModal";
 import { createEditor, type BadgeType, type Editor } from "./lib/editor";
 import { computeLayout, type ZoneName } from "./lib/layout";
 import { templates } from "./templates";
@@ -15,6 +16,7 @@ export default function App() {
   );
   const [bleed, setBleed] = useState(false);
   const [cutOutline, setCutOutline] = useState(true);
+  const [bgModalOpen, setBgModalOpen] = useState(false);
   const [zone, setZone] = useState<ZoneName>("front");
   const [selected, setSelected] = useState<FabricObject | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -116,6 +118,7 @@ export default function App() {
         onAddBadge={(b) => editor?.addBadge(zone, b)}
         onAddImage={(f) => editor && run(editor.addImage(f, zone))}
         onBackground={(f) => editor && run(editor.setBackground(f))}
+        onOpenBackgroundModal={() => setBgModalOpen(true)}
         onAutoGenerate={(t, f, b) => editor && run(editor.autoGenerate(t, f, b))}
         onPrint={printCover}
         onExport={exportCover}
@@ -132,6 +135,11 @@ export default function App() {
           onAddText={() => editor?.addText(zone)}
         />
       </aside>
+      <BackgroundModal
+        isOpen={bgModalOpen}
+        onClose={() => setBgModalOpen(false)}
+        onApply={(options) => editor?.generateBackground(options)}
+      />
     </div>
   );
 }
