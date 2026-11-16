@@ -61,43 +61,49 @@ export default function App() {
     );
   };
 
-  const printCover = () => {
+  const printCover = async () => {
     if (!editor) return;
-    const dataUrl = editor.exportPng(cutOutline);
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
-    document.body.appendChild(iframe);
-    const doc = iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>DVD Cover Print</title>
-            <style>
-              @page { size: landscape; margin: 0; }
-              html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: white; }
-              img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
-            </style>
-          </head>
-          <body>
-            <img src="${dataUrl}" onload="setTimeout(() => { window.print(); }, 250);" />
-          </body>
-        </html>
-      `);
-      doc.close();
-      iframe.contentWindow?.focus();
-      setTimeout(() => {
-        try {
-          document.body.removeChild(iframe);
-        } catch {}
-      }, 60000);
+    const base64 = editor.exportPng(cutOutline).split(",")[1];
+    try {
+      await invoke("print_cover", { dataB64: base64 });
+    } catch (err) {
+      console.warn("Native print failed or in browser mode, falling back to window.print:", err);
+      const dataUrl = `data:image/png;base64,${base64}`;
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+      const doc = iframe.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>DVD Cover Print</title>
+              <style>
+                @page { size: landscape; margin: 0; }
+                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: white; }
+                img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+              </style>
+            </head>
+            <body>
+              <img src="${dataUrl}" onload="setTimeout(() => { window.print(); }, 250);" />
+            </body>
+          </html>
+        `);
+        doc.close();
+        iframe.contentWindow?.focus();
+        setTimeout(() => {
+          try {
+            document.body.removeChild(iframe);
+          } catch {}
+        }, 60000);
+      }
     }
   };
 
